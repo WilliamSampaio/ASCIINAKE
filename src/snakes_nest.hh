@@ -12,7 +12,7 @@
 #define QUIT_KEY 27
 #define SNAKE_CHAR "\u25CF" // ●
 #define FOOD_CHAR "\u25EF"  // ◯
-#define DELAY_DEFAULT 100000
+#define DELAY_DEFAULT 250000
 
 #include <iostream>
 #include <ncurses.h>
@@ -99,19 +99,15 @@ public:
     {
         while (true)
         {
-            int tmpx = rand() % _plane.width;
+            int tmpx = rand() % (_plane.width - 1);
             if (tmpx == 0)
                 tmpx++;
-            if (tmpx == _plane.width - 2)
-                tmpx--;
 
-            int tmpy = rand() % _plane.height;
+            int tmpy = rand() % (_plane.height - 1);
             if (tmpy == 0)
                 tmpy++;
-            if (tmpx == _plane.height - 2)
-                tmpx--;
 
-            for (int i = 0; i < ((int)_snake_body->size()); ++i)
+            for (size_t i = 0; i < _snake_body->size(); ++i)
             {
                 if (_snake_body->at(i).pos_x == tmpx && _snake_body->at(i).pos_y == tmpy)
                 {
@@ -280,7 +276,7 @@ public:
             return true;
         }
 
-        for (int i = 3; i < ((int)snake->body.size()); i++)
+        for (size_t i = 3; i < snake->body.size(); i++)
         {
             if (snake->body[0].collision(snake->body[i]))
                 return true;
@@ -296,6 +292,7 @@ public:
             snake->body.push_back(snake->body[snake->body.size() - 1]);
             mouse->insert(plane->get_size(), &snake->body);
             score += 10;
+            delay -= 1000;
         }
     }
 
