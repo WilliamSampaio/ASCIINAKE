@@ -29,8 +29,8 @@ enum Direction
 
 struct PlaneSize
 {
-    int width, height;
-    PlaneSize(int _width = 10, int _height = 10)
+    size_t width, height;
+    PlaneSize(size_t _width = 10, size_t _height = 10)
     {
         width = _width;
         height = _height;
@@ -39,8 +39,8 @@ struct PlaneSize
 
 struct UnitType
 {
-    int pos_x, pos_y;
-    UnitType(int _pos_x = 0, int _pos_y = 0)
+    size_t pos_x, pos_y;
+    UnitType(size_t _pos_x = 0, size_t _pos_y = 0)
     {
         pos_x = _pos_x;
         pos_y = _pos_y;
@@ -59,15 +59,28 @@ protected:
     PlaneSize size;
 
 public:
-    Plane(int _width, int _height)
+    Plane()
     {
-        size.width = _width;
-        size.height = _height;
+        resize();
     }
 
     PlaneSize get_size()
     {
         return size;
+    }
+
+    bool resize()
+    {
+        size_t width = getmaxx(stdscr);
+        size_t height = (getmaxy(stdscr) / 5) * 4;
+
+        if (width != size.width || height != size.height)
+        {
+            size.width = width;
+            size.height = height;
+            return true;
+        }
+        return false;
     }
 
     void draw()
@@ -77,54 +90,17 @@ public:
         mvaddch(size.height - 1, 0, CHAR_BLOCK);
         mvaddch(size.height - 1, size.width - 1, CHAR_BLOCK);
 
-        for (int i = 1; i < size.width - 1; i++)
+        for (size_t i = 1; i < size.width - 1; i++)
         {
             mvaddch(0, i, CHAR_BLOCK);
             mvaddch(size.height - 1, i, CHAR_BLOCK);
         }
 
-        for (int i = 1; i < size.height - 1; i++)
+        for (size_t i = 1; i < size.height - 1; i++)
         {
             mvaddch(i, 0, CHAR_BLOCK);
             mvaddch(i, size.width - 1, CHAR_BLOCK);
         }
-    }
-};
-
-class Mouse
-{
-public:
-    UnitType mouse;
-
-    void insert(PlaneSize _plane, std::vector<UnitType> *_snake_body)
-    {
-        while (true)
-        {
-            int tmpx = rand() % (_plane.width - 1);
-            if (tmpx == 0)
-                tmpx++;
-
-            int tmpy = rand() % (_plane.height - 1);
-            if (tmpy == 0)
-                tmpy++;
-
-            for (size_t i = 0; i < _snake_body->size(); ++i)
-            {
-                if (_snake_body->at(i).pos_x == tmpx && _snake_body->at(i).pos_y == tmpy)
-                {
-                    continue;
-                }
-            }
-
-            mouse.pos_x = tmpx;
-            mouse.pos_y = tmpy;
-            break;
-        }
-    }
-
-    void draw()
-    {
-        mvaddch(mouse.pos_y, mouse.pos_x, CHAR_MOUSE);
     }
 };
 
@@ -134,6 +110,11 @@ public:
     std::vector<UnitType> body;
 
     Snake(PlaneSize _plane, Direction _initial_dir = Right, int _initial_len = 3)
+    {
+        initial_pos(_plane, _initial_dir, _initial_len);
+    }
+
+    void initial_pos(PlaneSize _plane, Direction _initial_dir = Right, int _initial_len)
     {
         for (int i = 0; i < _initial_len; ++i)
         {
@@ -186,12 +167,47 @@ public:
     }
 };
 
+class Mouse
+{
+public:
+    UnitType mouse;
+
+    void insert(PlaneSize _plane, Snake *_snake)
+    {
+        UnitType random = random_pos(_plane);
+
+        for (size_t i = 0; i < _snake->body.size(); ++i)
+        {
+            if (_snake->body[i].pos_x == random.pos_x && _snake->body[i].pos_y == random.pos_y)
+            {
+                insert(_plane, _snake);
+            }
+        }
+
+        mouse = random;
+    }
+
+    UnitType random_pos(PlaneSize _plane)
+    {
+        size_t tmpx = rand() % (_plane.width - 1);
+        if (tmpx == 0)
+            tmpx++;
+
+        size_t tmpy = rand() % (_plane.height - 1);
+        if (tmpy == 0)
+            tmpy++;
+        return UnitType(tmpx, tmpy);
+    }
+
+    void draw()
+    {
+        mvaddch(mouse.pos_y, mouse.pos_x, CHAR_MOUSE);
+    }
+};
+
 class SnakeGame
 {
 protected:
-    int max_width;
-    int max_height;
-
     int score = 0;
 
     int delay = DELAY_DEFAULT;
@@ -216,21 +232,24 @@ public:
         curs_set(0);
         srand(time(NULL));
 
-        max_width = getmaxx(stdscr) / 2;
-        max_height = (getmaxy(stdscr) / 4) * 3;
-
-        plane = new Plane(max_width, max_height);
+        plane = new Plane();
 
         snake = new Snake(plane->get_size(), direction);
 
         mouse = new Mouse();
-        mouse->insert(plane->get_size(), &snake->body);
+        mouse->insert(plane->get_size(), snake);
 
         draw();
     }
 
     void update()
     {
+        if (plane->resize())
+        {
+            clear();
+            mouse->insert(plane->get_size(), snake);
+        }
+
         int tmp = getch();
 
         switch (tmp)
@@ -303,7 +322,7 @@ public:
         if (mouse->mouse.collision(snake->body[0]))
         {
             snake->body.push_back(snake->body[snake->body.size() - 1]);
-            mouse->insert(plane->get_size(), &snake->body);
+            mouse->insert(plane->get_size(), snake);
             score += 10;
             delay -= 2000;
         }
@@ -311,7 +330,7 @@ public:
 
     void draw_score()
     {
-        move(max_height, 2);
+        move(plane->get_size().height, 2);
         printw("SCORE: %d / LEN: %d", score, (int)snake->body.size());
     }
 
