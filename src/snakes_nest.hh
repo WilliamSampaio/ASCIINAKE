@@ -10,8 +10,9 @@
 #endif
 
 #define QUIT_KEY 27
-#define SNAKE_CHAR "\u25CF" // ●
-#define FOOD_CHAR "\u25EF"  // ◯
+#define CHAR_BLOCK '#' // 🮐
+#define CHAR_SNAKE 'O' // ●
+#define CHAR_MOUSE 'X' // ◯
 #define DELAY_DEFAULT 250000
 
 #include <iostream>
@@ -71,21 +72,21 @@ public:
 
     void draw()
     {
-        mvprintw(0, 0, "🮐");
-        mvprintw(0, size.width - 1, "🮐");
-        mvprintw(size.height - 1, 0, "🮐");
-        mvprintw(size.height - 1, size.width - 1, "🮐");
+        mvaddch(0, 0, CHAR_BLOCK);
+        mvaddch(0, size.width - 1, CHAR_BLOCK);
+        mvaddch(size.height - 1, 0, CHAR_BLOCK);
+        mvaddch(size.height - 1, size.width - 1, CHAR_BLOCK);
 
         for (int i = 1; i < size.width - 1; i++)
         {
-            mvprintw(0, i, "🮐");
-            mvprintw(size.height - 1, i, "🮐");
+            mvaddch(0, i, CHAR_BLOCK);
+            mvaddch(size.height - 1, i, CHAR_BLOCK);
         }
 
         for (int i = 1; i < size.height - 1; i++)
         {
-            mvprintw(i, 0, "🮐");
-            mvprintw(i, size.width - 1, "🮐");
+            mvaddch(i, 0, CHAR_BLOCK);
+            mvaddch(i, size.width - 1, CHAR_BLOCK);
         }
     }
 };
@@ -123,7 +124,7 @@ public:
 
     void draw()
     {
-        mvprintw(mouse.pos_y, mouse.pos_x, FOOD_CHAR);
+        mvaddch(mouse.pos_y, mouse.pos_x, CHAR_MOUSE);
     }
 };
 
@@ -181,7 +182,7 @@ public:
 
     void draw()
     {
-        mvprintw(body[0].pos_y, body[0].pos_x, SNAKE_CHAR);
+        mvaddch(body[0].pos_y, body[0].pos_x, CHAR_SNAKE);
     }
 };
 
