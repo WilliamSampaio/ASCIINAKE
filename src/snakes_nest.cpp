@@ -1,6 +1,6 @@
-#include "snakes_nest.hh"
-
 #include <stdlib.h>
+
+#include "snakes_nest.hh"
 
 void __quit__()
 {
