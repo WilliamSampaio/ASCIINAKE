@@ -201,6 +201,8 @@ protected:
     Snake *snake;
     Mouse *mouse;
 
+    bool quit = false;
+
 public:
     SnakeGame()
     {
@@ -212,7 +214,7 @@ public:
         srand(time(NULL));
 
         max_width = getmaxx(stdscr) / 2;
-        max_height = getmaxy(stdscr) / 1.8;
+        max_height = (getmaxy(stdscr) / 4) * 3;
 
         plane = new Plane(max_width, max_height);
 
@@ -255,8 +257,8 @@ public:
             }
             break;
         case QUIT_KEY:
+            quit = true;
             break;
-            // __quit__();
         }
 
         snake->update(direction);
@@ -315,6 +317,8 @@ public:
     {
         while (true)
         {
+            if (quit)
+                break;
             update();
             draw();
             usleep(delay);
@@ -323,9 +327,10 @@ public:
 
     ~SnakeGame()
     {
+        curs_set(1);
         nodelay(stdscr, false);
-        getch();
         endwin();
+        std::cout << "Bye!\n";
     }
 };
 
