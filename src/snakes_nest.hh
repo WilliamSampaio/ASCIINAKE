@@ -81,46 +81,87 @@ public:
     }
 };
 
-class Food
+class Mouse
 {
 protected:
-    UnitType food;
+    UnitType mouse;
 
 public:
-    Food()
-    {
-        srand(time(NULL));
-    }
-
-    void insert(PlaneSize size, std::vector<UnitType> *snake)
+    void insert(PlaneSize _plane, std::vector<UnitType> *_snake_body)
     {
         while (true)
         {
-            int tmpx = rand() % size.width;
+            int tmpx = rand() % _plane.width;
             if (tmpx == 0)
                 tmpx++;
 
-            int tmpy = rand() % size.height;
+            int tmpy = rand() % _plane.height;
             if (tmpy == 0)
                 tmpy++;
 
-            for (int i = 0; i < ((int)snake->size()); ++i)
+            for (int i = 0; i < ((int)_snake_body->size()); ++i)
             {
-                if (snake->at(i).pos_x == tmpx && snake->at(i).pos_y == tmpy)
+                if (_snake_body->at(i).pos_x == tmpx && _snake_body->at(i).pos_y == tmpy)
                 {
                     continue;
                 }
             }
 
-            food.pos_x = tmpx;
-            food.pos_y = tmpy;
+            mouse.pos_x = tmpx;
+            mouse.pos_y = tmpy;
             break;
         }
     }
 
     void draw()
     {
-        mvprintw(food.pos_y, food.pos_x, FOOD_CHAR);
+        mvprintw(mouse.pos_y, mouse.pos_x, FOOD_CHAR);
+        refresh();
+    }
+};
+
+class Snake
+{
+public:
+    std::vector<UnitType> body;
+
+    Snake(PlaneSize _plane, int _initial_len = 3)
+    {
+        for (int i = 0; i < _initial_len; ++i)
+        {
+            body.push_back(UnitType((_plane.width / 2) - i, _plane.height / 2));
+        }
+
+        for (int i = 0; i < ((int)body.size()); i++)
+        {
+            mvprintw(body[0].pos_y, body[0].pos_x, SNAKE_CHAR);
+        }
+    }
+
+    void draw(Direction _dir)
+    {
+        move(body[body.size() - 1].pos_y, body[body.size() - 1].pos_x);
+        printw(" ");
+        refresh();
+        body.pop_back();
+
+        switch (_dir)
+        {
+        case Left:
+            body.insert(body.begin(), UnitType(body[0].pos_x - 1, body[0].pos_y));
+            break;
+        case Right:
+            body.insert(body.begin(), UnitType(body[0].pos_x + 1, body[0].pos_y));
+            break;
+        case Up:
+            body.insert(body.begin(), UnitType(body[0].pos_x, body[0].pos_y - 1));
+            break;
+        case Down:
+            body.insert(body.begin(), UnitType(body[0].pos_x, body[0].pos_y + 1));
+            break;
+        }
+
+        mvprintw(body[0].pos_y, body[0].pos_x, SNAKE_CHAR);
         refresh();
     }
 };
