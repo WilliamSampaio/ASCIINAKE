@@ -203,6 +203,7 @@ protected:
 
     bool quit = false;
     bool game_over = false;
+    bool win = false;
 
 public:
     SnakeGame()
@@ -273,6 +274,11 @@ public:
         }
 
         catch_mouse();
+
+        if (delay == 0)
+        {
+            win = true;
+        }
     }
 
     bool check_collision()
@@ -298,7 +304,7 @@ public:
             snake->body.push_back(snake->body[snake->body.size() - 1]);
             mouse->insert(plane->get_size(), &snake->body);
             score += 10;
-            delay -= 1000;
+            delay -= 2000;
         }
     }
 
@@ -311,15 +317,20 @@ public:
     void draw()
     {
         plane->draw();
-        if (!game_over)
+        if (!game_over && !win)
         {
             mouse->draw();
             snake->draw();
             draw_score();
         }
-        else
+        else if (game_over)
         {
             mvprintw((plane->get_size().height / 2) - 1, (plane->get_size().width / 2) - 5, "Game Over!");
+            mvprintw(plane->get_size().height / 2, (plane->get_size().width / 2) - 8, "Type ESC to exit");
+        }
+        else if (win)
+        {
+            mvprintw((plane->get_size().height / 2) - 1, (plane->get_size().width / 2) - 4, "You Win!");
             mvprintw(plane->get_size().height / 2, (plane->get_size().width / 2) - 8, "Type ESC to exit");
         }
         refresh();
