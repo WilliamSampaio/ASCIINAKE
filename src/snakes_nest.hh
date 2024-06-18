@@ -202,6 +202,7 @@ protected:
     Mouse *mouse;
 
     bool quit = false;
+    bool game_over = false;
 
 public:
     SnakeGame()
@@ -261,11 +262,14 @@ public:
             break;
         }
 
+        if (game_over)
+            return;
+
         snake->update(direction);
 
         if (check_collision())
         {
-            exit(1);
+            game_over = true;
         }
 
         catch_mouse();
@@ -307,9 +311,17 @@ public:
     void draw()
     {
         plane->draw();
-        mouse->draw();
-        snake->draw();
-        draw_score();
+        if (!game_over)
+        {
+            mouse->draw();
+            snake->draw();
+            draw_score();
+        }
+        else
+        {
+            mvprintw((plane->get_size().height / 2) - 1, (plane->get_size().width / 2) - 5, "Game Over!");
+            mvprintw(plane->get_size().height / 2, (plane->get_size().width / 2) - 8, "Type ESC to exit");
+        }
         refresh();
     }
 
@@ -333,7 +345,5 @@ public:
         std::cout << "Bye!\n";
     }
 };
-
-void __quit__();
 
 #endif
