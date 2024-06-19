@@ -292,11 +292,13 @@ public:
         noecho();
         curs_set(false);
 
-        init_pair(Red, COLOR_RED, COLOR_BLACK);
-        init_pair(Green, COLOR_GREEN, COLOR_BLACK);
-        init_pair(Cyan, COLOR_CYAN, COLOR_BLACK);
-        init_pair(Yellow, COLOR_YELLOW, COLOR_BLACK);
-        init_pair(Margenta, COLOR_MAGENTA, COLOR_BLACK);
+        init_pair(Colors::Blue, COLOR_BLUE, COLOR_BLACK);
+        init_pair(Colors::Cyan, COLOR_CYAN, COLOR_BLACK);
+        init_pair(Colors::Green, COLOR_GREEN, COLOR_BLACK);
+        init_pair(Colors::Margenta, COLOR_MAGENTA, COLOR_BLACK);
+        init_pair(Colors::Red, COLOR_RED, COLOR_BLACK);
+        init_pair(Colors::White, COLOR_WHITE, COLOR_BLACK);
+        init_pair(Colors::Yellow, COLOR_YELLOW, COLOR_BLACK);
 
         srand(time(NULL));
     }
@@ -485,7 +487,7 @@ public:
             attron(COLOR_PAIR(Green));
             break;
         case Completed:
-            attron(COLOR_PAIR(Yellow));
+            attron(COLOR_PAIR(1 + rand() % Yellow));
             for (size_t i = 0; i < (sizeof(win_text) / sizeof(win_text[0])); i++)
             {
                 mvaddstr(
