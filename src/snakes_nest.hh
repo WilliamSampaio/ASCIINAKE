@@ -15,6 +15,8 @@
 #define CHAR_MOUSE 'X' // ◯
 #define DELAY_DEFAULT 250000
 
+#define TITLE "ASCIINAKE"
+
 #include <iostream>
 #include <ncurses.h>
 #include <vector>
@@ -281,7 +283,15 @@ public:
 
         if (tmp == 'p' || tmp == 'P')
         {
-            (status == GameStatus::Paused) ? status = Running : status = Paused;
+            if (status == GameStatus::Paused)
+            {
+                status = GameStatus::Running;
+                clear();
+            }
+            else
+            {
+                status = GameStatus::Paused;
+            }
         }
 
         if (status == GameStatus::Paused)
@@ -376,13 +386,33 @@ public:
 
     void draw()
     {
-        plane->draw();
         if (status == GameStatus::Running)
         {
+            plane->draw();
             mouse->draw();
             snake->draw();
             draw_score();
         }
+
+        if (status == GameStatus::Paused)
+        {
+            plane->draw();
+            std::string pause_text[] = {
+                "+---------------------------+",
+                "|          PAUSED!          |",
+                "|    (Press P to Resume)    |",
+                "+---------------------------+"};
+
+            for (int i = 0; i < 4; i++)
+            {
+                mvaddstr(
+                    ((plane->get_size().height / 2) - 2) + i,
+                    (plane->get_size().width - pause_text[i].length()) / 2,
+                    pause_text[i].c_str());
+            }
+            draw_score();
+        }
+
         else if (status == GameStatus::Gameover)
         {
             mvprintw((plane->get_size().height / 2) - 1, (plane->get_size().width / 2) - 5, "Game Over!");
