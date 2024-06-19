@@ -141,10 +141,10 @@ public:
         initial_pos(_plane, _initial_len);
     }
 
-    void initial_pos(PlaneSize _plane, int _initial_len)
+    void initial_pos(PlaneSize _plane, size_t _initial_len)
     {
         body.clear();
-        for (int i = 0; i < _initial_len; i++)
+        for (size_t i = 0; i < _initial_len; i++)
         {
             body.push_back(UnitType(_plane.width / 2, _plane.height / 2));
         }
@@ -272,6 +272,7 @@ public:
             {
                 status = GameStatus::Running;
                 clear();
+                snake->initial_pos(plane->get_size(), snake->body.size());
             }
             else
             {
