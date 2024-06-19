@@ -485,6 +485,7 @@ public:
             attron(COLOR_PAIR(Green));
             break;
         case Completed:
+            attron(COLOR_PAIR(Yellow));
             for (size_t i = 0; i < (sizeof(win_text) / sizeof(win_text[0])); i++)
             {
                 mvaddstr(
@@ -492,6 +493,7 @@ public:
                     (plane->get_size().width - win_text[i].length()) / 2,
                     win_text[i].c_str());
             }
+            attron(COLOR_PAIR(Green));
             break;
         default:
             break;
