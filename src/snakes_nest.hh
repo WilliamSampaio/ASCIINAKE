@@ -9,9 +9,7 @@
 #include <unistd.h>
 #endif
 
-#define KEY_QUIT 27 // ESC
-#define KEY_PAUSE 'P'
-#define KEY_RESET 'R'
+#define KEY_QUIT 27    // ESC
 #define CHAR_BLOCK "🮐" // 🮐
 #define CHAR_SNAKE "●" // ●
 #define CHAR_MOUSE "◯" // ◯
@@ -265,11 +263,9 @@ public:
 class SnakeGame
 {
 protected:
-    int score = 0;
-
-    int delay = DELAY_DEFAULT;
-
-    Direction direction = Right;
+    int score;
+    int delay;
+    Direction direction;
 
     Plane *plane;
     Snake *snake;
@@ -307,12 +303,16 @@ public:
 
     void init_game()
     {
+        score = 0;
+        delay = DELAY_DEFAULT;
+        direction = Right;
         plane = new Plane();
         snake = new Snake(plane->get_size());
         mouse = new Mouse();
         mouse->insert(plane->get_size(), snake);
         status = GameStatus::Running;
         attron(COLOR_PAIR(Green));
+        clear();
         draw();
     }
 
@@ -333,8 +333,14 @@ public:
         case KEY_QUIT:
             status = GameStatus::Leave;
             break;
-        case KEY_PAUSE:
+        case 'P':
             (status == GameStatus::Paused) ? resume() : pause();
+            break;
+        case 'R':
+            if (status == GameStatus::Gameover || status == GameStatus::Completed)
+            {
+                init_game();
+            }
             break;
         }
 
@@ -354,8 +360,6 @@ public:
 
             break;
         default:
-            if (KEY == KEY_RESET)
-                init_game();
             return;
         }
     }
@@ -422,14 +426,18 @@ public:
 
     void pause()
     {
-        status = GameStatus::Paused;
+        if (status == GameStatus::Running)
+            status = GameStatus::Paused;
     }
 
     void resume()
     {
-        status = GameStatus::Running;
-        clear();
-        snake->draw(true);
+        if (status == GameStatus::Paused)
+        {
+            status = GameStatus::Running;
+            clear();
+            snake->draw(true);
+        }
     }
 
     void draw_score()
