@@ -9,7 +9,9 @@
 #include <unistd.h>
 #endif
 
-#define QUIT_KEY 27
+#define KEY_QUIT 27 // ESC
+#define KEY_PAUSE 'P'
+#define KEY_RESET 'R'
 #define CHAR_BLOCK "🮐" // 🮐
 #define CHAR_SNAKE "●" // ●
 #define CHAR_MOUSE "◯" // ◯
@@ -20,6 +22,25 @@
 #include <iostream>
 #include <ncurses.h>
 #include <vector>
+#include <cctype>
+
+const std::string pause_text[] = {
+    "+-----------------------------+",
+    "|         << PAUSED >>        |",
+    "| (P to Resume / ESC to Quit) |",
+    "+-----------------------------+"};
+
+const std::string game_over_text[] = {
+    "+----------------------------+",
+    "|      << GAME OVER! >>      |",
+    "| (R to Reset / ESC to Quit) |",
+    "+----------------------------+"};
+
+const std::string win_text[] = {
+    "+----------------------------+",
+    "|       << YOU WIN! >>       |",
+    "| (R to Reset / ESC to Quit) |",
+    "+----------------------------+"};
 
 enum Direction
 {
@@ -36,6 +57,18 @@ enum GameStatus
     Paused,
     Completed,
     Leave
+};
+
+enum Colors
+{
+    Black,
+    Blue,
+    Cyan,
+    Green,
+    Margenta,
+    Red,
+    White,
+    Yellow
 };
 
 struct PlaneSize
@@ -85,7 +118,7 @@ public:
     bool resize()
     {
         size_t width = getmaxx(stdscr);
-        size_t height = getmaxy(stdscr) - 5;
+        size_t height = getmaxy(stdscr) - 3;
 
         if (width != size.width || height != size.height)
         {
@@ -105,8 +138,8 @@ public:
 
         mvaddch(size.height, 0, ACS_BSSB);
         mvaddch(size.height, size.width - 1, ACS_BBSS);
-        mvaddch(size.height + 4, 0, ACS_LLCORNER);
-        mvaddch(size.height + 4, size.width - 1, ACS_LRCORNER);
+        mvaddch(size.height + 2, 0, ACS_LLCORNER);
+        mvaddch(size.height + 2, size.width - 1, ACS_LRCORNER);
 
         for (size_t i = 1; i < size.width - 1; i++)
         {
@@ -114,7 +147,7 @@ public:
             mvaddstr(size.height - 1, i, CHAR_BLOCK);
 
             mvaddch(size.height, i, ACS_HLINE);
-            mvaddch(size.height + 4, i, ACS_HLINE);
+            mvaddch(size.height + 2, i, ACS_HLINE);
         }
 
         for (size_t i = 1; i < size.height - 1; i++)
@@ -123,7 +156,7 @@ public:
             mvaddstr(i, size.width - 1, CHAR_BLOCK);
         }
 
-        for (int i = 1; i < 4; i++)
+        for (int i = 1; i < 2; i++)
         {
             mvaddch(size.height + i, 0, ACS_VLINE);
             mvaddch(size.height + i, size.width - 1, ACS_VLINE);
@@ -152,9 +185,7 @@ public:
 
     void update(Direction _dir)
     {
-        move(body[body.size() - 1].pos_y, body[body.size() - 1].pos_x);
-        printw(" ");
-        refresh();
+        mvaddstr(body[body.size() - 1].pos_y, body[body.size() - 1].pos_x, " ");
         body.pop_back();
 
         switch (_dir)
@@ -174,9 +205,20 @@ public:
         }
     }
 
-    void draw()
+    void draw(bool redraw = false)
     {
-        mvaddstr(body[0].pos_y, body[0].pos_x, CHAR_SNAKE);
+        attron(COLOR_PAIR(Cyan));
+        if (!redraw)
+        {
+            mvaddstr(body[0].pos_y, body[0].pos_x, CHAR_SNAKE);
+            return;
+        }
+        mvaddstr(body[body.size() - 1].pos_y, body[body.size() - 1].pos_x, " ");
+        for (size_t i = 0; i < body.size(); i++)
+        {
+            mvaddstr(body[i].pos_y, body[i].pos_x, CHAR_SNAKE);
+        }
+        attron(COLOR_PAIR(Green));
     }
 };
 
@@ -191,7 +233,7 @@ public:
 
         for (size_t i = 0; i < _snake->body.size(); ++i)
         {
-            if (_snake->body[i].pos_x == random.pos_x && _snake->body[i].pos_y == random.pos_y)
+            if (_snake->body[i].collision(random))
             {
                 insert(_plane, _snake);
             }
@@ -214,7 +256,9 @@ public:
 
     void draw()
     {
+        attron(COLOR_PAIR(Margenta));
         mvaddstr(mouse.pos_y, mouse.pos_x, CHAR_MOUSE);
+        attron(COLOR_PAIR(Green));
     }
 };
 
@@ -237,21 +281,38 @@ public:
     SnakeGame()
     {
         initscr();
+
+        if (has_colors() == FALSE)
+        {
+            endwin();
+            printf("Your terminal does not support colors.\n");
+            exit(1);
+        }
+
+        start_color();
+        cbreak();
         nodelay(stdscr, true);
         keypad(stdscr, true);
         noecho();
-        curs_set(0);
+        curs_set(false);
+
+        init_pair(Red, COLOR_RED, COLOR_BLACK);
+        init_pair(Green, COLOR_GREEN, COLOR_BLACK);
+        init_pair(Cyan, COLOR_CYAN, COLOR_BLACK);
+        init_pair(Yellow, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(Margenta, COLOR_MAGENTA, COLOR_BLACK);
+
         srand(time(NULL));
+    }
 
+    void init_game()
+    {
         plane = new Plane();
-
         snake = new Snake(plane->get_size());
-
         mouse = new Mouse();
         mouse->insert(plane->get_size(), snake);
-
         status = GameStatus::Running;
-
+        attron(COLOR_PAIR(Green));
         draw();
     }
 
@@ -265,47 +326,37 @@ public:
         }
 
         int KEY = getch();
+        KEY = toupper(KEY);
 
-        // QUIT
-        if (KEY == QUIT_KEY)
+        switch (KEY)
         {
+        case KEY_QUIT:
             status = GameStatus::Leave;
+            break;
+        case KEY_PAUSE:
+            (status == GameStatus::Paused) ? resume() : pause();
+            break;
+        }
+
+        switch (status)
+        {
+        case GameStatus::Running:
+            update_direction(KEY);
+            snake->update(direction);
+
+            if (check_collision())
+                status = GameStatus::Gameover;
+
+            catch_mouse();
+
+            if (delay == 50000)
+                status = GameStatus::Completed;
+
+            break;
+        default:
+            if (KEY == KEY_RESET)
+                init_game();
             return;
-        }
-
-        // Pause
-        if (KEY == 'p' || KEY == 'P')
-        {
-            if (status == GameStatus::Paused)
-            {
-                resume();
-            }
-            else
-            {
-                status = GameStatus::Paused;
-                return;
-            }
-        }
-
-        if (
-            status == GameStatus::Paused ||
-            status == GameStatus::Gameover ||
-            status == GameStatus::Completed)
-            return;
-
-        update_direction(KEY);
-        snake->update(direction);
-
-        if (check_collision())
-        {
-            status = GameStatus::Gameover;
-        }
-
-        catch_mouse();
-
-        if (delay == 50000)
-        {
-            status = GameStatus::Completed;
         }
     }
 
@@ -369,66 +420,83 @@ public:
         }
     }
 
+    void pause()
+    {
+        status = GameStatus::Paused;
+    }
+
     void resume()
     {
         status = GameStatus::Running;
         clear();
-        snake->initial_pos(plane->get_size(), snake->body.size());
+        snake->draw(true);
     }
 
     void draw_score()
     {
+        attron(COLOR_PAIR(Yellow));
         std::string msg = "SCORE: " + std::to_string(score) + " / LEN: " + std::to_string((int)snake->body.size());
         mvaddstr(
-            plane->get_size().height + 2,
+            plane->get_size().height + 1,
             (plane->get_size().width - msg.length()) / 2,
             msg.c_str());
+        attron(COLOR_PAIR(Green));
     }
 
     void draw()
     {
-        if (status == GameStatus::Running)
+        plane->draw();
+        switch (status)
         {
-            plane->draw();
+        case Running:
             mouse->draw();
             snake->draw();
-            draw_score();
-        }
-
-        if (status == GameStatus::Paused)
-        {
-            plane->draw();
-            std::string pause_text[] = {
-                "+-----------------------------+",
-                "|         << PAUSED >>        |",
-                "| (P to Resume / ESC to Quit) |",
-                "+-----------------------------+"};
-
-            for (int i = 0; i < 4; i++)
+            break;
+        case Paused:
+            attron(A_BLINK);
+            attron(COLOR_PAIR(Yellow));
+            for (size_t i = 0; i < (sizeof(pause_text) / sizeof(pause_text[0])); i++)
             {
                 mvaddstr(
-                    ((plane->get_size().height / 2) - 2) + i,
+                    ((plane->get_size().height / 2) - ((sizeof(pause_text) / sizeof(pause_text[0])) / 2)) + i,
                     (plane->get_size().width - pause_text[i].length()) / 2,
                     pause_text[i].c_str());
             }
-            draw_score();
+            attroff(A_BLINK);
+            attron(COLOR_PAIR(Green));
+            break;
+        case Gameover:
+            attron(COLOR_PAIR(Red));
+            for (size_t i = 0; i < (sizeof(game_over_text) / sizeof(game_over_text[0])); i++)
+            {
+                mvaddstr(
+                    ((plane->get_size().height / 2) - ((sizeof(game_over_text) / sizeof(game_over_text[0])) / 2)) + i,
+                    (plane->get_size().width - game_over_text[i].length()) / 2,
+                    game_over_text[i].c_str());
+            }
+            attron(COLOR_PAIR(Green));
+            break;
+        case Completed:
+            for (size_t i = 0; i < (sizeof(win_text) / sizeof(win_text[0])); i++)
+            {
+                mvaddstr(
+                    ((plane->get_size().height / 2) - ((sizeof(win_text) / sizeof(win_text[0])) / 2)) + i,
+                    (plane->get_size().width - win_text[i].length()) / 2,
+                    win_text[i].c_str());
+            }
+            break;
+        default:
+            break;
         }
 
-        else if (status == GameStatus::Gameover)
-        {
-            mvprintw((plane->get_size().height / 2) - 1, (plane->get_size().width / 2) - 5, "Game Over!");
-            mvprintw(plane->get_size().height / 2, (plane->get_size().width / 2) - 8, "Type ESC to exit");
-        }
-        else if (status == GameStatus::Completed)
-        {
-            mvprintw((plane->get_size().height / 2) - 1, (plane->get_size().width / 2) - 4, "You Win!");
-            mvprintw(plane->get_size().height / 2, (plane->get_size().width / 2) - 8, "Type ESC to exit");
-        }
+        draw_score();
+
         refresh();
     }
 
     void start_game()
     {
+        init_game();
         while (true)
         {
             if (status == GameStatus::Leave)
@@ -441,10 +509,10 @@ public:
 
     ~SnakeGame()
     {
-        curs_set(1);
+        curs_set(true);
         nodelay(stdscr, false);
         endwin();
-        system(CLEAR);
+        echo();
     }
 };
 
