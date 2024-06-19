@@ -10,9 +10,9 @@
 #endif
 
 #define QUIT_KEY 27
-#define CHAR_BLOCK '#' // 🮐
-#define CHAR_SNAKE 'O' // ●
-#define CHAR_MOUSE 'X' // ◯
+#define CHAR_BLOCK "🮐" // 🮐
+#define CHAR_SNAKE "●" // ●
+#define CHAR_MOUSE "◯" // ◯
 #define DELAY_DEFAULT 250000
 
 #define TITLE "ASCIINAKE"
@@ -98,10 +98,10 @@ public:
 
     void draw()
     {
-        mvaddch(0, 0, CHAR_BLOCK);
-        mvaddch(0, size.width - 1, CHAR_BLOCK);
-        mvaddch(size.height - 1, 0, CHAR_BLOCK);
-        mvaddch(size.height - 1, size.width - 1, CHAR_BLOCK);
+        mvaddstr(0, 0, CHAR_BLOCK);
+        mvaddstr(0, size.width - 1, CHAR_BLOCK);
+        mvaddstr(size.height - 1, 0, CHAR_BLOCK);
+        mvaddstr(size.height - 1, size.width - 1, CHAR_BLOCK);
 
         mvaddch(size.height, 0, ACS_BSSB);
         mvaddch(size.height, size.width - 1, ACS_BBSS);
@@ -110,8 +110,8 @@ public:
 
         for (size_t i = 1; i < size.width - 1; i++)
         {
-            mvaddch(0, i, CHAR_BLOCK);
-            mvaddch(size.height - 1, i, CHAR_BLOCK);
+            mvaddstr(0, i, CHAR_BLOCK);
+            mvaddstr(size.height - 1, i, CHAR_BLOCK);
 
             mvaddch(size.height, i, ACS_HLINE);
             mvaddch(size.height + 4, i, ACS_HLINE);
@@ -119,8 +119,8 @@ public:
 
         for (size_t i = 1; i < size.height - 1; i++)
         {
-            mvaddch(i, 0, CHAR_BLOCK);
-            mvaddch(i, size.width - 1, CHAR_BLOCK);
+            mvaddstr(i, 0, CHAR_BLOCK);
+            mvaddstr(i, size.width - 1, CHAR_BLOCK);
         }
 
         for (int i = 1; i < 4; i++)
@@ -136,32 +136,17 @@ class Snake
 public:
     std::vector<UnitType> body;
 
-    Snake(PlaneSize _plane, Direction _initial_dir = Right, int _initial_len = 3)
+    Snake(PlaneSize _plane, int _initial_len = 3)
     {
-        initial_pos(_plane, _initial_dir, _initial_len);
+        initial_pos(_plane, _initial_len);
     }
 
-    void initial_pos(PlaneSize _plane, Direction _initial_dir, int _initial_len)
+    void initial_pos(PlaneSize _plane, int _initial_len)
     {
         body.clear();
-        for (int i = 0; i < _initial_len; ++i)
+        for (int i = 0; i < _initial_len; i++)
         {
-            if (_initial_dir == Left)
-            {
-                body.push_back(UnitType((_plane.width / 2) + i, _plane.height / 2));
-            }
-            else if (_initial_dir == Right)
-            {
-                body.push_back(UnitType((_plane.width / 2) - i, _plane.height / 2));
-            }
-            else if (_initial_dir == Up)
-            {
-                body.push_back(UnitType(_plane.width / 2, (_plane.height / 2) - 1));
-            }
-            else
-            {
-                body.push_back(UnitType(_plane.width / 2, (_plane.height / 2) + 1));
-            }
+            body.push_back(UnitType(_plane.width / 2, _plane.height / 2));
         }
     }
 
@@ -191,7 +176,7 @@ public:
 
     void draw()
     {
-        mvaddch(body[0].pos_y, body[0].pos_x, CHAR_SNAKE);
+        mvaddstr(body[0].pos_y, body[0].pos_x, CHAR_SNAKE);
     }
 };
 
@@ -229,7 +214,7 @@ public:
 
     void draw()
     {
-        mvaddch(mouse.pos_y, mouse.pos_x, CHAR_MOUSE);
+        mvaddstr(mouse.pos_y, mouse.pos_x, CHAR_MOUSE);
     }
 };
 
@@ -260,7 +245,7 @@ public:
 
         plane = new Plane();
 
-        snake = new Snake(plane->get_size(), direction);
+        snake = new Snake(plane->get_size());
 
         mouse = new Mouse();
         mouse->insert(plane->get_size(), snake);
@@ -275,7 +260,7 @@ public:
         if (plane->resize())
         {
             clear();
-            snake->initial_pos(plane->get_size(), direction, (int)snake->body.size());
+            snake->initial_pos(plane->get_size(), (int)snake->body.size());
             mouse->insert(plane->get_size(), snake);
         }
 
