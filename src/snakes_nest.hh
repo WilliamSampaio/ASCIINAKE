@@ -27,6 +27,15 @@ enum Direction
     Down
 };
 
+enum GameStatus
+{
+    Running,
+    Gameover,
+    Paused,
+    Completed,
+    Leave
+};
+
 struct PlaneSize
 {
     size_t width, height;
@@ -48,7 +57,9 @@ struct UnitType
     bool collision(UnitType _unit)
     {
         if (_unit.pos_x == pos_x && _unit.pos_y == pos_y)
+        {
             return true;
+        }
         return false;
     }
 };
@@ -72,7 +83,7 @@ public:
     bool resize()
     {
         size_t width = getmaxx(stdscr);
-        size_t height = (getmaxy(stdscr) / 5) * 4;
+        size_t height = getmaxy(stdscr) - 5;
 
         if (width != size.width || height != size.height)
         {
@@ -90,16 +101,30 @@ public:
         mvaddch(size.height - 1, 0, CHAR_BLOCK);
         mvaddch(size.height - 1, size.width - 1, CHAR_BLOCK);
 
+        mvaddch(size.height, 0, ACS_BSSB);
+        mvaddch(size.height, size.width - 1, ACS_BBSS);
+        mvaddch(size.height + 4, 0, ACS_LLCORNER);
+        mvaddch(size.height + 4, size.width - 1, ACS_LRCORNER);
+
         for (size_t i = 1; i < size.width - 1; i++)
         {
             mvaddch(0, i, CHAR_BLOCK);
             mvaddch(size.height - 1, i, CHAR_BLOCK);
+
+            mvaddch(size.height, i, ACS_HLINE);
+            mvaddch(size.height + 4, i, ACS_HLINE);
         }
 
         for (size_t i = 1; i < size.height - 1; i++)
         {
             mvaddch(i, 0, CHAR_BLOCK);
             mvaddch(i, size.width - 1, CHAR_BLOCK);
+        }
+
+        for (int i = 1; i < 4; i++)
+        {
+            mvaddch(size.height + i, 0, ACS_VLINE);
+            mvaddch(size.height + i, size.width - 1, ACS_VLINE);
         }
     }
 };
@@ -114,8 +139,9 @@ public:
         initial_pos(_plane, _initial_dir, _initial_len);
     }
 
-    void initial_pos(PlaneSize _plane, Direction _initial_dir = Right, int _initial_len)
+    void initial_pos(PlaneSize _plane, Direction _initial_dir, int _initial_len)
     {
+        body.clear();
         for (int i = 0; i < _initial_len; ++i)
         {
             if (_initial_dir == Left)
@@ -218,9 +244,7 @@ protected:
     Snake *snake;
     Mouse *mouse;
 
-    bool quit = false;
-    bool game_over = false;
-    bool win = false;
+    GameStatus status;
 
 public:
     SnakeGame()
@@ -239,6 +263,8 @@ public:
         mouse = new Mouse();
         mouse->insert(plane->get_size(), snake);
 
+        status = GameStatus::Running;
+
         draw();
     }
 
@@ -247,10 +273,19 @@ public:
         if (plane->resize())
         {
             clear();
+            snake->initial_pos(plane->get_size(), direction, (int)snake->body.size());
             mouse->insert(plane->get_size(), snake);
         }
 
         int tmp = getch();
+
+        if (tmp == 'p' || tmp == 'P')
+        {
+            (status == GameStatus::Paused) ? status = Running : status = Paused;
+        }
+
+        if (status == GameStatus::Paused)
+            return;
 
         switch (tmp)
         {
@@ -279,25 +314,25 @@ public:
             }
             break;
         case QUIT_KEY:
-            quit = true;
+            status = GameStatus::Leave;
             break;
         }
 
-        if (game_over)
+        if (status == GameStatus::Gameover)
             return;
 
         snake->update(direction);
 
         if (check_collision())
         {
-            game_over = true;
+            status = GameStatus::Gameover;
         }
 
         catch_mouse();
 
         if (delay == 0)
         {
-            win = true;
+            status = GameStatus::Completed;
         }
     }
 
@@ -308,10 +343,12 @@ public:
             return true;
         }
 
-        for (size_t i = 3; i < snake->body.size(); i++)
+        for (size_t i = 1; i < snake->body.size(); i++)
         {
             if (snake->body[0].collision(snake->body[i]))
+            {
                 return true;
+            }
         }
 
         return false;
@@ -330,25 +367,28 @@ public:
 
     void draw_score()
     {
-        move(plane->get_size().height, 2);
-        printw("SCORE: %d / LEN: %d", score, (int)snake->body.size());
+        std::string msg = "SCORE: " + std::to_string(score) + " / LEN: " + std::to_string((int)snake->body.size());
+        mvaddstr(
+            plane->get_size().height + 2,
+            (plane->get_size().width - msg.length()) / 2,
+            msg.c_str());
     }
 
     void draw()
     {
         plane->draw();
-        if (!game_over && !win)
+        if (status == GameStatus::Running)
         {
             mouse->draw();
             snake->draw();
             draw_score();
         }
-        else if (game_over)
+        else if (status == GameStatus::Gameover)
         {
             mvprintw((plane->get_size().height / 2) - 1, (plane->get_size().width / 2) - 5, "Game Over!");
             mvprintw(plane->get_size().height / 2, (plane->get_size().width / 2) - 8, "Type ESC to exit");
         }
-        else if (win)
+        else if (status == GameStatus::Completed)
         {
             mvprintw((plane->get_size().height / 2) - 1, (plane->get_size().width / 2) - 4, "You Win!");
             mvprintw(plane->get_size().height / 2, (plane->get_size().width / 2) - 8, "Type ESC to exit");
@@ -360,7 +400,7 @@ public:
     {
         while (true)
         {
-            if (quit)
+            if (status == GameStatus::Leave)
                 break;
             update();
             draw();
@@ -373,7 +413,7 @@ public:
         curs_set(1);
         nodelay(stdscr, false);
         endwin();
-        std::cout << "Bye!\n";
+        system(CLEAR);
     }
 };
 
