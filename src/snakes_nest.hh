@@ -264,26 +264,54 @@ public:
             mouse->insert(plane->get_size(), snake);
         }
 
-        int tmp = getch();
+        int KEY = getch();
 
-        if (tmp == 'p' || tmp == 'P')
+        // QUIT
+        if (KEY == QUIT_KEY)
+        {
+            status = GameStatus::Leave;
+            return;
+        }
+
+        // Pause
+        if (KEY == 'p' || KEY == 'P')
         {
             if (status == GameStatus::Paused)
             {
-                status = GameStatus::Running;
-                clear();
-                snake->initial_pos(plane->get_size(), snake->body.size());
+                resume();
             }
             else
             {
                 status = GameStatus::Paused;
+                return;
             }
         }
 
-        if (status == GameStatus::Paused)
+        if (
+            status == GameStatus::Paused ||
+            status == GameStatus::Gameover ||
+            status == GameStatus::Completed)
             return;
 
-        switch (tmp)
+        update_direction(KEY);
+        snake->update(direction);
+
+        if (check_collision())
+        {
+            status = GameStatus::Gameover;
+        }
+
+        catch_mouse();
+
+        if (delay == 50000)
+        {
+            status = GameStatus::Completed;
+        }
+    }
+
+    void update_direction(int _key)
+    {
+        switch (_key)
         {
         case KEY_LEFT:
             if (direction != Right)
@@ -309,26 +337,6 @@ public:
                 direction = Right;
             }
             break;
-        case QUIT_KEY:
-            status = GameStatus::Leave;
-            break;
-        }
-
-        if (status == GameStatus::Gameover)
-            return;
-
-        snake->update(direction);
-
-        if (check_collision())
-        {
-            status = GameStatus::Gameover;
-        }
-
-        catch_mouse();
-
-        if (delay == 0)
-        {
-            status = GameStatus::Completed;
         }
     }
 
@@ -361,6 +369,13 @@ public:
         }
     }
 
+    void resume()
+    {
+        status = GameStatus::Running;
+        clear();
+        snake->initial_pos(plane->get_size(), snake->body.size());
+    }
+
     void draw_score()
     {
         std::string msg = "SCORE: " + std::to_string(score) + " / LEN: " + std::to_string((int)snake->body.size());
@@ -384,10 +399,10 @@ public:
         {
             plane->draw();
             std::string pause_text[] = {
-                "+---------------------------+",
-                "|          PAUSED!          |",
-                "|    (Press P to Resume)    |",
-                "+---------------------------+"};
+                "+-----------------------------+",
+                "|         << PAUSED >>        |",
+                "| (P to Resume / ESC to Quit) |",
+                "+-----------------------------+"};
 
             for (int i = 0; i < 4; i++)
             {
