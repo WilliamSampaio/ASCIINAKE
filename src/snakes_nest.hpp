@@ -20,23 +20,17 @@
 #include <iostream>
 #include <vector>
 
-const std::string pause_text[] = {
-    "+-----------------------------+",
-    "|         << PAUSED >>        |",
-    "| (P to Resume / ESC to Quit) |",
-    "+-----------------------------+"};
+const std::vector<std::string> pause_text = {
+    "       << PAUSED! >>       ",
+    "(P to Resume / ESC to Quit)"};
 
-const std::string game_over_text[] = {
-    "+----------------------------+",
-    "|      << GAME OVER! >>      |",
-    "| (R to Reset / ESC to Quit) |",
-    "+----------------------------+"};
+const std::vector<std::string> game_over_text = {
+    "     << GAME OVER! >>     ",
+    "(R to Reset / ESC to Quit)"};
 
-const std::string win_text[] = {
-    "+----------------------------+",
-    "|       << YOU WIN! >>       |",
-    "| (R to Reset / ESC to Quit) |",
-    "+----------------------------+"};
+const std::vector<std::string> win_text = {
+    "      << YOU WIN! >>      ",
+    "(R to Reset / ESC to Quit)"};
 
 enum Direction
 {
@@ -108,6 +102,12 @@ public:
     bool resize();
 
     void draw();
+};
+
+class Dialog
+{
+public:
+    static void draw(PlaneSize, std::vector<std::string>);
 };
 
 class Snake

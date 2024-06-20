@@ -62,6 +62,37 @@ void Plane::draw()
     }
 }
 
+void Dialog::draw(PlaneSize _plane, const std::vector<std::string> texts)
+{
+    size_t width, height, x, y;
+    width = texts[0].length() + 1;
+    height = texts.size() + 1;
+    x = ((_plane.width / 2) - 1) - (width / 2);
+    y = ((_plane.height / 2) - 1) - (height / 2);
+
+    mvaddch(y, x, ACS_BSSB);
+    mvaddch(y, x + width, ACS_BBSS);
+    mvaddch(y + height, x, ACS_LLCORNER);
+    mvaddch(y + height, x + width, ACS_LRCORNER);
+
+    for (size_t i = 1; i < width; i++)
+    {
+        mvaddch(y, x + i, ACS_HLINE);
+        mvaddch(y + height, x + i, ACS_HLINE);
+    }
+
+    for (size_t i = 1; i < height; i++)
+    {
+        mvaddch(y + i, x, ACS_VLINE);
+        mvaddch(y + i, x + width, ACS_VLINE);
+    }
+
+    for (size_t i = 0; i < texts.size(); i++)
+    {
+        mvaddstr(y + i + 1, x + 1, texts[i].c_str());
+    }
+}
+
 Snake::Snake(PlaneSize _plane, int _initial_len = 3)
 {
     initial_pos(_plane, _initial_len);
@@ -238,7 +269,7 @@ void SnakeGame::update()
 
         catch_mouse();
 
-        if (delay == 50000)
+        if (score == 1000)
             status = GameStatus::Completed;
 
         break;
@@ -346,36 +377,18 @@ void SnakeGame::draw()
     case Paused:
         attron(A_BLINK);
         attron(COLOR_PAIR(Yellow));
-        for (size_t i = 0; i < (sizeof(pause_text) / sizeof(pause_text[0])); i++)
-        {
-            mvaddstr(
-                ((plane->get_size().height / 2) - ((sizeof(pause_text) / sizeof(pause_text[0])) / 2)) + i,
-                (plane->get_size().width - pause_text[i].length()) / 2,
-                pause_text[i].c_str());
-        }
+        Dialog::draw(plane->get_size(), pause_text);
         attroff(A_BLINK);
         attron(COLOR_PAIR(Green));
         break;
     case Gameover:
         attron(COLOR_PAIR(Red));
-        for (size_t i = 0; i < (sizeof(game_over_text) / sizeof(game_over_text[0])); i++)
-        {
-            mvaddstr(
-                ((plane->get_size().height / 2) - ((sizeof(game_over_text) / sizeof(game_over_text[0])) / 2)) + i,
-                (plane->get_size().width - game_over_text[i].length()) / 2,
-                game_over_text[i].c_str());
-        }
+        Dialog::draw(plane->get_size(), game_over_text);
         attron(COLOR_PAIR(Green));
         break;
     case Completed:
         attron(COLOR_PAIR(1 + rand() % Yellow));
-        for (size_t i = 0; i < (sizeof(win_text) / sizeof(win_text[0])); i++)
-        {
-            mvaddstr(
-                ((plane->get_size().height / 2) - ((sizeof(win_text) / sizeof(win_text[0])) / 2)) + i,
-                (plane->get_size().width - win_text[i].length()) / 2,
-                win_text[i].c_str());
-        }
+        Dialog::draw(plane->get_size(), win_text);
         attron(COLOR_PAIR(Green));
         break;
     default:
