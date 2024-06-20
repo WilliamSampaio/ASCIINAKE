@@ -1,6 +1,6 @@
 #include <clocale>
 
-#include "snakes_nest.hh"
+#include "snakes_nest.hpp"
 
 int main(int argc, char **argv)
 {
