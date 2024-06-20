@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-g++ -Wall -Werror src/*.cpp -o snake_game.out -lncursesw -ltinfo
+g++ -Wall -Werror src/*.cpp -o asciinake -lncursesw -ltinfo
