@@ -40,4 +40,4 @@
 # Generated using ignr.py - github.com/Antrikshy/ignr.py
 
 .vscode/
-*.out
+asciinake
