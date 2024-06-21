@@ -1,4 +1,4 @@
-# ASCIINAKE
+# ASCIINAKE 🐍
 
 ## Build
 
